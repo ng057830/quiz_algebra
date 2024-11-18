@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz de Álgebra Lineal: Conceptos Básicos</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+  <style>
+    :root {
+      --primary-color: #2563eb;
+      --secondary-color: #10b981;
+      --background-color: #f8fafc;
+      --text-color: #1e293b;
+      --border-color: #e2e8f0;
+      --correct-color: #10b981;
+      --incorrect-color: #ef4444;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    body {
+      background-color: var(--background-color);
+      color: var(--text-color);
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .screen {
+      display: none;
+      background: white;
+      border-radius: 1rem;
+      padding: 2rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    h1 {
+      color: var(--primary-color);
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    h2 {
+      color: var(--secondary-color);
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .btn {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background-color 0.3s;
+    }
+
+    .btn:hover {
+      background-color: #1d4ed8;
+    }
+
+    .options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .option {
+      padding: 1rem;
+      border: 2px solid var(--border-color);
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: center;
+    }
+
+    .option:hover {
+      border-color: var(--secondary-color);
+      background-color: #f0f9ff;
+    }
+
+    .option.selected {
+      border-color: var(--primary-color);
+      background-color: #e0f2fe;
+    }
+
+    .hint-container {
+      margin-top: 1rem;
+      padding: 1rem;
+      background-color: #f0fdf4;
+      border-radius: 0.5rem;
+      border: 1px solid var(--secondary-color);
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 0.5rem;
+      background-color: var(--border-color);
+      border-radius: 0.25rem;
+      margin: 1rem 0;
+      overflow: hidden;
+    }
+
+    .progress {
+      height: 100%;
+      background-color: var(--primary-color);
+      border-radius: 0.25rem;
+      transition: width 0.3s ease-in-out;
+      width: 0%;
+    }
+
+    #hintBtn {
+      background-color: var(--secondary-color);
+      margin-top: 1rem;
+    }
+
+    #hintBtn:hover {
+      background-color: #047857;
+    }
+
+    .result-question {
+      margin-bottom: 1.5rem;
+    }
+
+    .result-question h3 {
+      margin-bottom: 0.5rem;
+    }
+
+    .result-option {
+      padding: 0.5rem;
+      border: 1px solid var(--border-color);
+      border-radius: 0.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .correct {
+      background-color: var(--correct-color);
+      color: white;
+      border-color: var(--correct-color);
+    }
+
+    .incorrect {
+      background-color: var(--incorrect-color);
+      color: white;
+      border-color: var(--incorrect-color);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div id="startScreen" class="screen active">
+      <h1>Quiz de Álgebra Lineal: Conceptos Básicos</h1>
+      <h2>Preguntas de opción múltiple • Fundamentos de Álgebra Lineal</h2>
+      <p>Este quiz se enfoca en evaluar la comprensión básica de los fundamentos del álgebra lineal, incluyendo sistemas de ecuaciones lineales, matrices, espacios vectoriales y transformaciones lineales.</p>
+      <button class="btn" onclick="startQuiz()">Comenzar Quiz</button>
+    </div>
+
+    <div id="quizScreen" class="screen">
+      <div class="progress-bar">
+        <div id="progress" class="progress"></div>
+      </div>
+      <h2 id="questionText"></h2>
+      <div id="options" class="options"></div>
+      <button id="hintBtn" class="btn" onclick="showHint()">Mostrar Pista</button>
+      <div id="hintContainer" class="hint-container" style="display: none;"></div>
+    </div>
+
+    <div id="resultsScreen" class="screen">
+      <h1>Resultados del Quiz</h1>
+      <h2 id="score"></h2>
+      <p id="feedback"></p>
+      <div id="detailedResults"></div>
+      <button class="btn" onclick="restartQuiz()">Intentar de Nuevo</button>
+    </div>
+  </div>
+
+  <script>
+    MathJax.Hub.Config({
+      tex2jax: { inlineMath: [['\\(', '\\)']] }
+    });
+
+    const questions = [
+      {
+        question: "¿Qué representa una matriz en el contexto de sistemas de ecuaciones lineales?",
+        options: [
+          "Una colección de números organizados en filas y columnas que representan coeficientes del sistema.",
+          "Un vector en el espacio euclidiano.",
+          "Un escalar multiplicado por un vector.",
+          "Una solución única al sistema de ecuaciones."
+        ],
+        correct: 0,
+        hints: [
+          "Las matrices se utilizan para representar sistemas de ecuaciones de forma compacta.",
+          "Cada fila representa una ecuación, y cada columna representa las variables."
+        ]
+      },
+      {
+        question: "Un sistema de ecuaciones lineales es homogéneo si:",
+        options: [
+          "Todas las variables son cero.",
+          "Los términos independientes son cero.",
+          "Tiene infinitas soluciones.",
+          "No tiene soluciones."
+        ],
+        correct: 1,
+        hints: [
+          "En un sistema homogéneo, todos los términos del lado derecho de las ecuaciones son cero.",
+          "Se escribe generalmente como \\( Ax = 0 \\)."
+        ]
+      },
+      {
+        question: "El determinante de una matriz cuadrada es útil para:",
+        options: [
+          "Calcular la inversa de la matriz.",
+          "Encontrar el rango de la matriz.",
+          "Resolver sistemas lineales no homogéneos.",
+          "Todas las anteriores."
+        ],
+        correct: 3,
+        hints: [
+          "El determinante se utiliza en varias aplicaciones en álgebra lineal.",
+          "Un determinante cero indica que la matriz no es invertible."
+        ]
+      },
+      {
+        question: "Un espacio vectorial es:",
+        options: [
+          "Un conjunto de vectores que solo pueden sumarse.",
+          "Un conjunto cerrado bajo las operaciones de suma y producto por escalar.",
+          "Un conjunto de matrices.",
+          "Un conjunto de números reales."
+        ],
+        correct: 1,
+        hints: [
+          "Debe cumplir ciertos axiomas como la asociatividad y la existencia de elemento neutro.",
+          "Incluye operaciones de suma y multiplicación por escalares."
+        ]
+      },
+      {
+        question: "En un espacio vectorial euclidiano, el producto escalar entre dos vectores es:",
+        options: [
+          "Un vector perpendicular a ambos vectores.",
+          "El área del paralelogramo que forman.",
+          "Un número real que mide su similitud.",
+          "Siempre cero."
+        ],
+        correct: 2,
+        hints: [
+          "El producto escalar es una medida de la proyección de un vector sobre otro.",
+          "Si el producto escalar es cero, los vectores son ortogonales."
+        ]
+      },
+      {
+        question: "Una transformación lineal es una función entre espacios vectoriales que:",
+        options: [
+          "Conserva la suma de vectores y la multiplicación por escalar.",
+          "Convierte vectores en matrices.",
+          "Solo escala los vectores.",
+          "Invierte el sentido de los vectores."
+        ],
+        correct: 0,
+        hints: [
+          "Debe cumplir \\( T(u + v) = T(u) + T(v) \\) y \\( T(cu) = cT(u) \\).",
+          "Es una aplicación que preserva la estructura del espacio vectorial."
+        ]
+      },
+      {
+        question: "El espacio dual de un espacio vectorial \\( V \\) es:",
+        options: [
+          "El conjunto de todos los vectores ortogonales a \\( V \\).",
+          "El conjunto de todas las transformaciones lineales de \\( V \\) en \\( V \\).",
+          "El conjunto de todas las formas lineales (funcionales lineales) en \\( V \\).",
+          "Otro nombre para \\( V \\) mismo."
+        ],
+        correct: 2,
+        hints: [
+          "Las formas lineales son aplicaciones lineales de \\( V \\) en los números reales.",
+          "El espacio dual se denota generalmente como \\( V^* \\)."
+        ]
+      },
+      {
+        question: "Un endomorfismo es:",
+        options: [
+          "Una transformación lineal de un espacio vectorial en sí mismo.",
+          "Una matriz invertible.",
+          "Una forma bilineal.",
+          "Una función que no es lineal."
+        ],
+        correct: 0,
+        hints: [
+          "Es una aplicación de \\( V \\) en \\( V \\).",
+          "Son importantes para estudiar las propiedades internas de \\( V \\)."
+        ]
+      },
+      {
+        question: "La forma de Jordan de una matriz es útil para:",
+        options: [
+          "Resolver ecuaciones diferenciales.",
+          "Simplificar matrices a una forma casi diagonal.",
+          "Calcular determinantes de matrices.",
+          "Encontrar la inversa de una matriz."
+        ],
+        correct: 1,
+        hints: [
+          "La forma de Jordan organiza los autovalores y cadenas de Jordan.",
+          "Es útil en la teoría de diagonalización de matrices."
+        ]
+      },
+      {
+        question: "Una forma bilineal es una función que:",
+        options: [
+          "Es lineal en cada uno de sus dos argumentos.",
+          "Es lineal solo en el primer argumento.",
+          "Es cuadrática.",
+          "Devuelve siempre un número complejo."
+        ],
+        correct: 0,
+        hints: [
+          "Satisface \\( B(u+v, w) = B(u, w) + B(v, w) \\) y \\( B(u, v+w) = B(u, v) + B(u, w) \\).",
+          "Puede ser simétrica o antisimétrica."
+        ]
+      },
+      {
+        question: "Una forma cuadrática es:",
+        options: [
+          "Una expresión del tipo \\( ax + by + c \\).",
+          "Una función que asigna a cada vector un escalar mediante una forma bilineal.",
+          "Siempre positiva.",
+          "Una matriz de tamaño 2x2."
+        ],
+        correct: 1,
+        hints: [
+          "Se define como \\( Q(x) = B(x, x) \\), donde \\( B \\) es una forma bilineal.",
+          "Es usada en la clasificación de cónicas y superficies."
+        ]
+      },
+      {
+        question: "Un espacio afín es:",
+        options: [
+          "Un espacio vectorial con un punto de origen fijo.",
+          "Un conjunto de puntos donde no se define el origen.",
+          "Un espacio vectorial de dimensión infinita.",
+          "Un subconjunto de un espacio vectorial."
+        ],
+        correct: 1,
+        hints: [
+          "Los espacios afines generalizan los espacios vectoriales sin un origen.",
+          "Las operaciones son diferentes a las de un espacio vectorial."
+        ]
+      },
+      {
+        question: "Un movimiento en el plano es:",
+        options: [
+          "Una transformación que preserva distancias y ángulos.",
+          "Una transformación que escala el plano.",
+          "Una función lineal.",
+          "Una rotación seguida de una reflexión."
+        ],
+        correct: 0,
+        hints: [
+          "Los movimientos incluyen traslaciones, rotaciones y reflexiones.",
+          "Son isometrías del plano."
+        ]
+      },
+      {
+        question: "Una cónica es:",
+        options: [
+          "Una función cuadrática en dos variables.",
+          "La intersección de un plano con un cono.",
+          "Un polinomio de grado tres.",
+          "Una superficie en tres dimensiones."
+        ],
+        correct: 1,
+        hints: [
+          "Las cónicas incluyen el círculo, la elipse, la parábola y la hipérbola.",
+          "Se estudian mediante formas cuadráticas."
+        ]
+      },
+      {
+        question: "Una aplicación lineal es invertible si y solo si:",
+        options: [
+          "Es inyectiva.",
+          "Es suprayectiva.",
+          "Es biyectiva.",
+          "Tiene determinante cero."
+        ],
+        correct: 2,
+        hints: [
+          "Para ser invertible, debe ser tanto inyectiva como suprayectiva.",
+          "La matriz asociada debe tener determinante distinto de cero."
+        ]
+      },
+      {
+        question: "El rango de una matriz es:",
+        options: [
+          "El número de filas de la matriz.",
+          "El número máximo de columnas linealmente independientes.",
+          "Siempre igual al número de columnas.",
+          "El determinante de la matriz."
+        ],
+        correct: 1,
+        hints: [
+          "El rango indica la dimensión del espacio generado por las columnas.",
+          "Es igual al rango de sus filas."
+        ]
+      }
+    ];
+
+    function shuffleOptions(question) {
+      for (let i = question.options.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [question.options[i], question.options[j]] = [question.options[j], question.options[i]];
+        if (question.correct === i) {
+          question.correct = j;
+        } else if (question.correct === j) {
+          question.correct = i;
+        }
+      }
+    }
+
+    questions.forEach(shuffleOptions);
+
+    let currentQuestion = 0;
+    let score = 0;
+    let selectedOption = null;
+    let currentHint = 0;
+    let userAnswers = [];
+
+    function startQuiz() {
+      document.getElementById('startScreen').classList.remove('active');
+      document.getElementById('quizScreen').classList.add('active');
+      showQuestion();
+    }
+
+    function showQuestion() {
+      const question = questions[currentQuestion];
+      document.getElementById('questionText').innerHTML = question.question;
+      document.getElementById('progress').style.width = `${(currentQuestion / questions.length) * 100}%`;
+
+      const optionsContainer = document.getElementById('options');
+      optionsContainer.innerHTML = '';
+
+      question.options.forEach((option, index) => {
+        const optionDiv = document.createElement('div');
+        optionDiv.className = 'option';
+        optionDiv.innerHTML = option;
+        optionDiv.onclick = () => {
+          selectOption(index);
+          nextQuestion();
+        };
+        optionsContainer.appendChild(optionDiv);
+      });
+
+      MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+
+      document.getElementById('hintContainer').style.display = 'none';
+      currentHint = 0;
+      selectedOption = null;
+    }
+
+    function selectOption(index) {
+      const options = document.querySelectorAll('.option');
+      options.forEach(option => option.classList.remove('selected'));
+      options[index].classList.add('selected');
+      selectedOption = index;
+      userAnswers[currentQuestion] = index;
+    }
+
+    function showHint() {
+      const question = questions[currentQuestion];
+      if (currentHint < question.hints.length) {
+        const hintContainer = document.getElementById('hintContainer');
+        hintContainer.style.display = 'block';
+        hintContainer.innerHTML = question.hints[currentHint];
+        currentHint++;
+        MathJax.Hub.Queue(["Typeset", MathJax.Hub, hintContainer]);
+      }
+    }
+
+    function nextQuestion() {
+      if (selectedOption !== null) {
+        if (selectedOption === questions[currentQuestion].correct) {
+          score++;
+        }
+
+        currentQuestion++;
+
+        if (currentQuestion < questions.length) {
+          showQuestion();
+        } else {
+          showResults();
+        }
+      } else {
+        alert('Por favor selecciona una opción');
+      }
+    }
+
+    function showResults() {
+      document.getElementById('quizScreen').classList.remove('active');
+      document.getElementById('resultsScreen').classList.add('active');
+
+      const scoreElement = document.getElementById('score');
+      const feedbackElement = document.getElementById('feedback');
+      const detailedResults = document.getElementById('detailedResults');
+
+      scoreElement.textContent = `Puntuación: ${score} de ${questions.length}`;
+
+      if (score >= questions.length * 0.8) {
+        feedbackElement.textContent = "¡Excelente! Tienes una comprensión sólida de los conceptos fundamentales del álgebra lineal.";
+      } else if (score >= questions.length * 0.6) {
+        feedbackElement.textContent = "Buen trabajo, aunque algunos conceptos podrían revisarse para mayor comprensión.";
+      } else {
+        feedbackElement.textContent = "Parece que algunos conceptos necesitan refuerzo. Revisar estos temas te ayudará a fortalecer tu comprensión.";
+      }
+
+      // Mostrar las respuestas detalladas
+      detailedResults.innerHTML = '';
+
+      questions.forEach((question, index) => {
+        const questionDiv = document.createElement('div');
+        questionDiv.className = 'result-question';
+
+        const questionTitle = document.createElement('h3');
+        questionTitle.innerHTML = `Pregunta ${index + 1}: ${question.question}`;
+        questionDiv.appendChild(questionTitle);
+
+        const optionsList = document.createElement('div');
+
+        question.options.forEach((option, i) => {
+          const optionDiv = document.createElement('div');
+          optionDiv.className = 'result-option';
+
+          if (userAnswers[index] === i) {
+            if (i === question.correct) {
+              optionDiv.classList.add('correct');
+            } else {
+              optionDiv.classList.add('incorrect');
+            }
+          }
+
+          if (i === question.correct && userAnswers[index] !== question.correct) {
+            optionDiv.classList.add('correct');
+          }
+
+          optionDiv.innerHTML = option;
+          optionsList.appendChild(optionDiv);
+        });
+
+        questionDiv.appendChild(optionsList);
+        detailedResults.appendChild(questionDiv);
+      });
+
+      MathJax.Hub.Queue(["Typeset", MathJax.Hub, detailedResults]);
+    }
+
+    function restartQuiz() {
+      currentQuestion = 0;
+      score = 0;
+      selectedOption = null;
+      userAnswers = [];
+      document.getElementById('resultsScreen').classList.remove('active');
+      document.getElementById('startScreen').classList.add('active');
+      questions.forEach(shuffleOptions);
+    }
+  </script>
+</body>
+
+</html>
